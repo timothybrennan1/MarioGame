@@ -184,11 +184,36 @@ function makeTextures(scene) {
     g.fillTriangle(0,8,10,18,20,8);
   });
 
-  // Goal flag pole base
-  gen('flag_base', 16, 32, g => {
-    g.fillStyle(0xFFD700); g.fillRect(6,0,4,32);
-    g.fillStyle(0xFF5722); g.fillRect(10,2,14,10);
-    g.fillStyle(0xE64A19); g.fillRect(10,2,14,2);
+  // Tall flag pole shaft
+  gen('pole_shaft', 12, 300, g => {
+    g.fillStyle(0xB8860B); g.fillRect(4,0,4,300);   // shadow side
+    g.fillStyle(0xFFD700); g.fillRect(3,0,4,300);   // main gold
+    g.fillStyle(0xFFF176); g.fillRect(3,0,2,300);   // highlight
+  });
+
+  // Ball finial at top
+  gen('pole_top', 18, 18, g => {
+    g.fillStyle(0xB8860B); g.fillCircle(9,9,9);
+    g.fillStyle(0xFFD700); g.fillCircle(8,8,8);
+    g.fillStyle(0xFFF176); g.fillCircle(6,6,4);
+  });
+
+  // Flag banner
+  gen('flag_banner', 56, 40, g => {
+    g.fillStyle(0x2E7D32); g.fillRect(0,0,56,40);      // green field
+    g.fillStyle(0x1B5E20); g.fillRect(0,0,56,6);       // dark stripe
+    g.fillStyle(0x1B5E20); g.fillRect(0,34,56,6);      // dark stripe
+    g.fillStyle(0xFFD700); g.fillRect(8,10,36,20);     // gold star field
+    g.fillStyle(0x2E7D32); g.fillCircle(26,20,8);      // cutout circle
+    g.fillStyle(0xFFD700); g.fillRect(22,14,8,12);     // cross bar
+    g.fillRect(18,18,16,4);
+  });
+
+  // Pole base pedestal
+  gen('pole_base', 32, 20, g => {
+    g.fillStyle(0x795548); g.fillRect(0,4,32,16);
+    g.fillStyle(0x8D6E63); g.fillRect(4,0,24,6);
+    g.fillStyle(0x5D4037); g.fillRect(0,14,32,6);
   });
 
   g.destroy();
@@ -376,11 +401,24 @@ class GameScene extends Phaser.Scene {
     this.coins = this.physics.add.staticGroup();
     COINS.forEach(({x,y}) => this.coins.create(x,y,'coin').refreshBody());
 
-    // ── Goal flag at end ──
+    // ── Goal flag pole at end ──
     this.goalX = WORLD_W - 80;
-    this.goal = this.physics.add.staticGroup();
-    for (let i = 0; i < 3; i++)
-      this.goal.create(this.goalX+16, H-16-i*32, 'flag_base').setSize(16,32).refreshBody();
+    const poleX = this.goalX;
+    const groundY = H - 32; // top of ground
+
+    // Pedestal
+    this.add.image(poleX, groundY, 'pole_base').setOrigin(0.5, 1).setDepth(3);
+    // Pole shaft — tall
+    this.add.image(poleX, groundY - 16, 'pole_shaft').setOrigin(0.5, 1).setDepth(3);
+    // Ball on top
+    this.add.image(poleX, groundY - 16 - 300, 'pole_top').setOrigin(0.5, 1).setDepth(3);
+    // Flag banner hanging from near the top
+    this.add.image(poleX + 6, groundY - 16 - 285, 'flag_banner').setOrigin(0, 0.5).setDepth(3);
+
+    // Invisible win-detection zone spanning the pole height
+    const goalZone = this.add.zone(poleX, groundY - 170, 40, 340).setOrigin(0.5);
+    this.physics.add.existing(goalZone, true);
+    this.goal = goalZone;
 
     // ── Enemies ──
     this.enemies = this.physics.add.group();
